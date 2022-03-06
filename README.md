@@ -3,7 +3,7 @@
 - Java Persistence API (aka JPA) its part of data manipulation
 - Persistence refers to information that continues to exist even after the process or application that created it is no longer running
 
-Options for storing data:
+**Options for storing data**
 - SQL
 - NoSQL
 - File systems
@@ -11,7 +11,7 @@ Options for storing data:
 
 JPA is a specification and its implemented by Hibernate OpenJPA etc ...
 
-Object Relational Mapping (aka ORM)
+**Object Relational Mapping (aka ORM)**
 - ORM connects relation database and Java Application together
 - Its like a bridge
 - Data is organized in a relational database via one or more tables with columns and unique id
@@ -23,11 +23,11 @@ Object Relational Mapping (aka ORM)
 - JPA is a abstractaction on JDBC that's makes eazy to map objects to relational databases
 - The mapping between Java Objects and database tables is defined via persistence metadata
 
-JPA configuration can be done via:
+**JPA configuration can be done via**
 - annotations (recommended)
 - persistence.xml file (legacy)
 
-The data can be queried:
+**The data can be queried**
 - Criteria API
 - Native Query (Named native quries)
 - JPQL/HQL (Named queries)
@@ -141,17 +141,17 @@ curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/credent
 
 > #### Transaction management
 
-Entity life cycle:
+**Entity life cycle**
 - Persisting
 - Updateting
 - Removing
 - Loading
 
-Entity states:
+**Entity states**
 - Managed
 - Detached
 
-States by example:
+**States by example**
 - When an entity is created with the new keyword, then it is a regular Java Objects
 - Before it is persistet it is in Transient or new State
 - Once its persistet with the EntityManager, then its in the managed state
@@ -160,7 +160,7 @@ States by example:
 - An entity can be in the remove state if its marked for deletion via the EntityManager remove method
 - An objects becomes detached when its removed, flushed or commiteted. Once an entity is detached it is going to live in memory until the garbage collector removes from memory
 
-API action table:
+**API action table**
 
 |Initial State 	|Action 	    |End State 	  |
 |---------------|---------------|-------------|
@@ -180,7 +180,7 @@ API action table:
 
 > #### Relationship Mapping in JPA
 
-Directions:
+**Directions**
 ```
 (Entity A) --Unidirectional--> B(Entity B)
 ```
@@ -188,7 +188,7 @@ Directions:
 (Entity A) <--Bidirectional--> B(Entity B)
 ```
 
-Cardinality:
+**Cardinality**
 
 |Type 			|Strategy 	|Description 																			  |
 |---------------|-----------|-----------------------------------------------------------------------------------------|
@@ -197,7 +197,7 @@ Cardinality:
 |@ManyToOne     |JoinTable 	|Multiple instances of an entity can be related to a single instance of the other entity  |
 |@ManyToMany    |JoinTable 	|The entity instances can be related to multiple instances of each other     			  |
 
-JPA Cascade Type
+**JPA Cascade Type**
 
 |Type 		|Description 																			  																				    |
 |-----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -208,7 +208,7 @@ JPA Cascade Type
 |REFRESH    |Refresh operations reread the value of a given instance from the database     			  																					|
 |DETACH     |The detach operation removes the entity from the persistent context. When we use CascadeType.DETACH, the child entity will also get removed from the persistent context    |
 
-Hibernate Cascade Type
+**Hibernate Cascade Type**
 
 |Type 			 |Description 																			  			  |
 |----------------|----------------------------------------------------------------------------------------------------|
