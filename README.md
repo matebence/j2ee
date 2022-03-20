@@ -821,32 +821,9 @@ curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/hiberna
 @Table(name="CREDENTIAL")
 public class Credential {
 
-    @Id
-    @Getter
-    @Setter
-    @Column(name="CREDENTIAL_ID")
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    public Long credentialId;
-
     @OneToOne(cascade=CascadeType.ALL)
     @JoinColumn(name="USER_ID")
     public User user;
-```
-
-```java
-@Entity
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name="FINANCES_USER")
-public class User {
-
-    @Id
-    @Getter
-    @Setter
-    @Column(name = "USER_ID")
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long userId;
 ```
 
 ```bash
@@ -866,13 +843,6 @@ curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate
 @Table(name="CREDENTIAL")
 public class Credential {
 
-    @Id
-    @Getter
-    @Setter
-    @Column(name="CREDENTIAL_ID")
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    public Long credentialId;
-
     @OneToOne(cascade=CascadeType.ALL)
     @JoinColumn(name="USER_ID")
     public User user;
@@ -885,13 +855,6 @@ public class Credential {
 @AllArgsConstructor
 @Table(name="FINANCES_USER")
 public class User {
-
-    @Id
-    @Getter
-    @Setter
-    @Column(name = "USER_ID")
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    private Long userId;
 
     @Getter
     @Setter
@@ -914,14 +877,6 @@ curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate
 @AllArgsConstructor
 @Table(name = "ACCOUNT")
 public class Account {
-
-    @Id
-    @Getter
-    @Setter
-    @Column(name = "ACCOUNT_ID")
-    @GeneratedValue(strategy=GenerationType.TABLE, generator="account_table_generator")
-    @TableGenerator(name = "account_table_generator", table="IFINACES_KEYS", pkColumnName = "PK_NAME", valueColumnName="PK_VALUE")
-    private Long accountId;
 
     @Getter
     @Setter
@@ -948,14 +903,6 @@ curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate
 @Table(name = "ACCOUNT")
 public class Account {
 
-    @Id
-    @Getter
-    @Setter
-    @Column(name = "ACCOUNT_ID")
-    @GeneratedValue(strategy=GenerationType.TABLE, generator="account_table_generator")
-    @TableGenerator(name = "account_table_generator", table="IFINACES_KEYS", pkColumnName = "PK_NAME", valueColumnName="PK_VALUE")
-    private Long accountId;
-
     @Getter
     @Setter
     @OneToMany(cascade = CascadeType.ALL)
@@ -971,13 +918,6 @@ public class Account {
 @AllArgsConstructor
 @Table(name = "TRANSACTION")
 public class Transaction {
-
-    @Id
-    @Getter
-    @Setter
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TRANSACTION_ID")
-    private Long transactionId;
 
     @Getter
     @Setter
