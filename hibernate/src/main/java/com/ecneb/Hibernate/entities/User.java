@@ -1,5 +1,7 @@
 package com.ecneb.Hibernate.entities;
 
+import com.ecneb.Hibernate.converts.PersonNameConverter;
+import com.ecneb.Hibernate.dtos.PersonName;
 import lombok.Setter;
 import lombok.Getter;
 import lombok.Builder;
@@ -12,6 +14,7 @@ import javax.persistence.Entity;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.OneToOne;
+import javax.persistence.Convert;
 import javax.persistence.CascadeType;
 import javax.persistence.GenerationType;
 import java.util.Date;
@@ -37,13 +40,9 @@ public class User {
 
     @Getter
     @Setter
-    @Column(name = "FIRST_NAME")
-    private String firstName;
-
-    @Getter
-    @Setter
-    @Column(name = "LAST_NAME")
-    private String lastName;
+    @Column(name = "PERSON_NAME")
+    @Convert(converter = PersonNameConverter.class)
+    private PersonName personName;
 
     @Getter
     @Setter
