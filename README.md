@@ -204,7 +204,7 @@ public class User {
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="FINANCES_USER
+@Table(name="FINANCES_USER)
 public class User {
 
 	private Long userId;
