@@ -102,33 +102,33 @@ public class HibernateUtil {
 ```java
 public class Application {
 
-		public static void main(String[] args) {
+	public static void main(String[] args) {
 
-			//New Session with transaction
-			Session session = HibernateUtil.getSessionFactory().openSession();
-			session.getTransaction().begin();
-			
-			//Creating new Entity
-			User user = new User();
-			user.setBirthDate(new Date());
-			user.setCreatedBy("kevin");
-			user.setCreatedDate(new Date());
-			user.setEmailAddress("kmb385@yahoo.com");
-			user.setFirstName("Kevin");
-			user.setLastName("Bowersox");
-			user.setLastUpdatedBy("kevin");
-			user.setLastUpdatedDate(new Date());
-			
-			//Save entity
-			session.save(user);
-			
-			//Commiting transaction
-			session.getTrasaction().commit();
+		//New Session with transaction
+		Session session = HibernateUtil.getSessionFactory().openSession();
+		session.getTransaction().begin();
+		
+		//Creating new Entity
+		User user = new User();
+		user.setBirthDate(new Date());
+		user.setCreatedBy("kevin");
+		user.setCreatedDate(new Date());
+		user.setEmailAddress("kmb385@yahoo.com");
+		user.setFirstName("Kevin");
+		user.setLastName("Bowersox");
+		user.setLastUpdatedBy("kevin");
+		user.setLastUpdatedDate(new Date());
+		
+		//Save entity
+		session.save(user);
+		
+		//Commiting transaction
+		session.getTrasaction().commit();
 
-			//Closing the session
-			session.close();
-		}
+		//Closing the session
+		session.close();
 	}
+}
 ```
 
 
@@ -190,9 +190,9 @@ public class Credential {
 @Table(name="FINANCES_USER")
 public class User {
 
-    @Id
+	@Id
 	@Getter
-    @Setter
+	@Setter
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "USER_ID")
 	private Long userId;
@@ -209,9 +209,9 @@ public class User {
 
 	private Long userId;
 
-    @Id
+	@Id
 	@Getter
-    @Setter
+	@Setter
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "USER_ID")
 	public Long getUserId() {
@@ -370,7 +370,7 @@ public class User {
 	@Id
 	@Getter
 	@Setter
-    @GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy=GenerationType.AUTO)
 	@Column(name="USER_ID")
 	private Long userId;
 }
