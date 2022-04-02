@@ -1,7 +1,7 @@
 package com.ecneb.Hibernate.resources;
 
-import com.ecneb.Hibernate.entities.Budget;
-import com.ecneb.Hibernate.services.BudgetService;
+import com.ecneb.Hibernate.entities.Currency;
+import com.ecneb.Hibernate.services.CurrencyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,21 +13,21 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
-@RequestMapping(value = "budget-resource/api", produces = "application/json")
-public class BudgetResource {
+@RequestMapping(value = "currency-resource/api", produces = "application/json")
+public class CurrencyResource {
 
     @Autowired
-    private BudgetService budgetService;
+    private CurrencyService currencyService;
 
     @PostMapping("/persist")
     @ResponseStatus(HttpStatus.CREATED)
-    public void persist(@RequestBody Budget budget) {
-        budgetService.persist(budget);
+    public void persist(@RequestBody Currency currency){
+        currencyService.persist(currency);
     }
 
-    @GetMapping("/search/{id}")
+    @GetMapping("/search/{name}/{countryName}")
     @ResponseStatus(HttpStatus.OK)
-    public Budget search(@PathVariable Long id) {
-        return budgetService.search(id).orElse(new Budget());
+    public Currency search(@PathVariable String name, @PathVariable String countryName) {
+        return currencyService.search(name, countryName).orElse(new Currency());
     }
 }

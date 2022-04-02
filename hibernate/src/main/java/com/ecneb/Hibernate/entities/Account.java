@@ -1,5 +1,6 @@
 package com.ecneb.Hibernate.entities;
 
+import com.ecneb.Hibernate.enums.AccountType;
 import lombok.Setter;
 import lombok.Getter;
 import lombok.Builder;
@@ -19,13 +20,19 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Transient;
 import javax.persistence.Temporal;
 import javax.persistence.TableGenerator;
+import javax.persistence.ManyToMany;
+import javax.persistence.JoinTable;
+import javax.persistence.Enumerated;
 import javax.persistence.TemporalType;
+import javax.persistence.EnumType;
 import javax.persistence.CascadeType;
 import javax.persistence.GenerationType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Builder
@@ -48,6 +55,20 @@ public class Account {
     @JoinColumn(name = "ACCOUNT_ID")
     //if we set this to nullable false then on the transaction side we have set insertable and updatable to false
     private List<Transaction> transactions = new ArrayList<>();
+
+    @Getter
+    @Setter
+    @ManyToMany(cascade=CascadeType.ALL)
+    @JoinTable(name="USER_ACCOUNT", joinColumns=@JoinColumn(name="ACCOUNT_ID"),
+            inverseJoinColumns=@JoinColumn(name="USER_ID"))
+    private Set<User> users = new HashSet<>();
+
+    @Getter
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(name="ACCOUNT_TYPE")
+    // if dont use the EnumType.STRING then the table values wil be the order of enums
+    private AccountType accountType;
 
     @Getter
     @Setter

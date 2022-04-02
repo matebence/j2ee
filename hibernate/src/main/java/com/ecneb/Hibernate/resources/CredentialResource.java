@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping(value = "credential-resource/api", produces = "application/json")
@@ -39,7 +40,7 @@ public class CredentialResource {
         credentialService.delete(id);
     }
 
-    @PostMapping("/search/{id}")
+    @GetMapping("/search/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Credential search(@PathVariable Long id) {
         return credentialService.search(id).orElse(new Credential());

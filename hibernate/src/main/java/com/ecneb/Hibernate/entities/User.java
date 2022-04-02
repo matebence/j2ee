@@ -2,6 +2,7 @@ package com.ecneb.Hibernate.entities;
 
 import com.ecneb.Hibernate.converts.PersonNameConverter;
 import com.ecneb.Hibernate.dtos.PersonName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Setter;
 import lombok.Getter;
 import lombok.Builder;
@@ -15,9 +16,12 @@ import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.OneToOne;
 import javax.persistence.Convert;
+import javax.persistence.ManyToMany;
 import javax.persistence.CascadeType;
 import javax.persistence.GenerationType;
 import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Builder
@@ -32,6 +36,12 @@ public class User {
     @Column(name = "USER_ID")
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long userId;
+
+    @Getter
+    @Setter
+    @JsonIgnore
+    @ManyToMany(cascade = CascadeType.ALL, mappedBy = "users")
+    private Set<Account> accounts = new HashSet<>();
 
     @Getter
     @Setter

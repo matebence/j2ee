@@ -33,6 +33,9 @@ JPA is a specification and its implemented by Hibernate OpenJPA etc ...
 - JPQL/HQL (Named queries)
 
 
+
+
+
 > #### Building A Session Factory
 
 > With hibernate.properties
@@ -42,6 +45,16 @@ hibernate.connection.password=skills
 hibernate.connection.url=jdbc:mysql://localhost:3306/ifinances
 hibernate.connection.driver_class=com.mysql.jdbc.Driver
 hibernate.dialect=org.hibernate.dialect.MySQL5Dialect
+
+spring.jpa.hibernate.ddl-auto=create-drop
+
+spring.jpa.properties.javax.persistence.schema-generation.scripts.action=drop-and-create
+
+spring.jpa.properties.javax.persistence.schema-generation.scripts.create-target=create.sql
+spring.jpa.properties.javax.persistence.schema-generation.scripts.drop-target=drop.sql
+
+spring.jpa.properties.javax.persistence.schema-generation.scripts.create-source=metadata
+spring.jpa.properties.javax.persistence.schema-generation.scripts.drop-source=metadata
 ```
 
 > Or with hibernate.cfg.xml
@@ -221,6 +234,9 @@ public class User {
 ```
 
 
+
+
+
 > #### List of annotations
 
 
@@ -318,6 +334,9 @@ public class User {
 |@ValueGenerationType 			 | The @ValueGenerationType annotation is used to specify that the current annotation type should be used as a generator annotation type.																													                |
 |@Where 				         | The @Where annotation is used to specify a custom SQL WHERE clause used when fetching an entity or a collection.																																						    |
 |@WhereJoinTable 				 | The @WhereJoinTable annotation is used to specify a custom SQL WHERE clause used when fetching a join collection table.																																                    |
+
+
+
 
 
 > #### Most used annoations
@@ -513,6 +532,27 @@ public class User {
 ```
 
 
+> @Enumerated
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="FINANCES_USER")
+public class User {
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="ACCOUNT_TYPE")
+    // if dont use the EnumType.STRING then the table values wil be the order of enums
+    private AccountType accountType;
+}
+```
+
+
+
+
+
 > #### Value Types
 
 - Hibernate types
@@ -637,7 +677,7 @@ public class Bank {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"name": "test", "address": {"addressLine1": "test"}, "address2": [{"addressLine1": "test2"}], "contacts": ["ecneb"], "contacts2": {"ecneb": "SK"}}' 'http://localhost:8080/hibernate/bank-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/bank-resource/api/search/1'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/bank-resource/api/search/1'
 ```
 
 
@@ -675,7 +715,22 @@ public class User {
 ```
 
 
-> #### Persisting objects
+> #### CRUD
+
+- Similarities between Hibernate session and JPA EntityManager
+
+|Operation 			|Session 	    				  |EntitiyManager(Tx)	  			   |Description 		 																										  |
+|-------------------|---------------------------------|------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+|Saving    			|se.save(account)	 	     	  |em.persist(account)    		       |It saves the entity 																										  |
+|Saving or updating |se.saveOrUpdate(account)	 	  |    		       					   |It saves or update the entity 																								  |
+|Retrieving 		|se.get(Account.class, 1L)	 	  |em.find(Account.class, 1L)    	   |If it doesn't not find it, it will throw a NullPointerException (It has cache) 												  |
+|Retrieving 		|se.load(Account.class, 123L)	  |em.getReference(Account.class, 1L)  |With load the select will run only if a property is accest. If it doesn't not find it, it will throw a ObjectNotFoundException|
+|Deleting  			|se.delete(account)	 	    	  |em.remove(account);   			   |It removes the entity 																										  |
+|Modifying 			|se.flush()			 	    	  |tx.commit();		   				   |Take all the changes in persistence context and sync to db, this is also true for transaction commit 			 			  |
+|Detaching			|se.update(account)	 	   		  |em.merge(account);   			   |It detaches the entity 																										  |
+|Reattaching		|se.close(account)	 	  	      |em.detach(account);   			   |It attaches the entity 																										  |
+
+> Persisting objects
 
 ```java
 @Transactional
@@ -689,7 +744,7 @@ curl -XPOST -H 'Content-type: application/json' -d '{"username":"John","password
 ```
 
 
-> #### Reading objects
+> Reading objects
 
 ```java
 @Transactional
@@ -699,11 +754,11 @@ public Optional<Credential> search(Long id) {
 ```
 
 ```bash
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/credential-resource/api/search/2'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/credential-resource/api/search/2'
 ```
 
 
-> #### Updating objects
+> Updating objects
 
 ```java
 @Transactional
@@ -719,7 +774,7 @@ curl -XPUT -H 'Content-type: application/json' -d '{"username":"Doe","password":
 ```
 
 
-> #### Deleting objects
+> Deleting objects
 
 ```java
 @Transactional
@@ -731,6 +786,9 @@ public void delete(Long id) {
 ```bash
 curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/hibernate/credential-resource/api/delete/2'
 ```
+
+
+
 
 
 > #### Transaction management
@@ -821,6 +879,8 @@ curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/hiberna
 @Table(name="CREDENTIAL")
 public class Credential {
 
+    @Getter
+    @Setter
     @OneToOne(cascade=CascadeType.ALL)
     @JoinColumn(name="USER_ID")
     public User user;
@@ -829,7 +889,7 @@ public class Credential {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"username":"John","password":"Doe", "user": {"personName": {"firstName": "John", "lastName": "Doe"}}}' 'http://localhost:8080/hibernate/credential-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/credential-resource/api/search/1'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/credential-resource/api/search/1'
 ```
 
 
@@ -843,6 +903,8 @@ curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate
 @Table(name="CREDENTIAL")
 public class Credential {
 
+    @Getter
+    @Setter
     @OneToOne(cascade=CascadeType.ALL)
     @JoinColumn(name="USER_ID")
     public User user;
@@ -865,7 +927,7 @@ public class User {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"personName": {"firstName": "John", "lastName": "Doe"}, "emailAddress": "john.doe@gmail.com", "credential": {"username": "johny", "password": "test"}}' 'http://localhost:8080/hibernate/user-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/user-resource/api/search/1'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/user-resource/api/search/1'
 ```
 
 > #### @OneToMany Unidirectional
@@ -889,11 +951,11 @@ public class Account {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"name": "ecneb", "initialBalance": 15, "currentBalance": 15, "transactions": [{"transactionType": "TEST", "amount": 15}]}' 'http://localhost:8080/hibernate/account-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
 ```
 
 
-> #### @OneToMany Bidirectional
+> #### @OneToMany & ManyToOne Bidirectional
 
 ```java
 @Entity
@@ -931,7 +993,7 @@ public class Transaction {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"name": "ecneb", "initialBalance": 15, "currentBalance": 15, "transactions": [{"transactionType": "TEST", "amount": 15}]}' 'http://localhost:8080/hibernate/account-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
 ```
 
 
@@ -947,6 +1009,8 @@ curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate
 @Table(name = "BUDGET")
 public class Budget {
 
+    @Getter
+    @Setter
     @OneToMany(cascade = CascadeType.ALL)
     @JoinTable(name = "BUDGET_TRANSACTION", joinColumns = @JoinColumn(name = "BUDGET_ID"), inverseJoinColumns = @JoinColumn(name = "TRANSACTION_ID"))
     private List<Transaction> transactions = new ArrayList<>();
@@ -956,36 +1020,648 @@ public class Budget {
 ```bash
 curl -XPOST -H 'Content-type: application/json' -d '{"name": "cpu", "goalAmount": 15, "transactions": [{"transactionType": "TEST", "amount": 15, "account": {"name": "national bank"}}]}' 'http://localhost:8080/hibernate/budget-resource/api/persist'
 
-curl -XPOST -H 'Content-type: application/json' 'http://localhost:8080/hibernate/budget-resource/api/search/1'
-```
-
-
-> #### @ManyToOne Unidirectional
-
-```java
-```
-
-
-> #### @ManyToOne Bidirectional
-
-```java
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/budget-resource/api/search/1'
 ```
 
 
 > #### @ManyToMany Unidirectional
 
 ```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "ACCOUNT")
+public class Account {
+
+    @Getter
+    @Setter
+    @ManyToMany(cascade=CascadeType.ALL)
+    @JoinTable(name="USER_ACCOUNT", joinColumns=@JoinColumn(name="ACCOUNT_ID"),
+            inverseJoinColumns=@JoinColumn(name="USER_ID"))
+    private Set<User> users = new HashSet<>();
+}
 ```
 
 
 > #### @ManyToMany Bidirectional
 
 ```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="FINANCES_USER")
+public class User {
+
+    @Getter
+    @Setter
+    @ManyToMany(cascade = CascadeType.ALL, mappedBy = "users")
+    private Set<Account> accounts = new HashSet<>();
+}
 ```
 
+```bash
+curl -XPOST -H 'Content-type: application/json' -d '{"name": "ecneb", "initialBalance": 15, "currentBalance": 15, "transactions": [{"transactionType": "TEST", "amount": 15}], "users": [{"personName": {"firstName": "John", "lastName": "Doe"}}]}' 'http://localhost:8080/hibernate/account-resource/api/persist'
 
-> #### @ManyToMany with joinTable
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
+```
 
 ```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "ACCOUNT")
+public class Account {
+
+    @Getter
+    @Setter
+    @ManyToMany(cascade=CascadeType.ALL)
+    @JoinTable(name="USER_ACCOUNT", joinColumns=@JoinColumn(name="ACCOUNT_ID"),
+            inverseJoinColumns=@JoinColumn(name="USER_ID"))
+    private Set<User> users = new HashSet<>();
+}
 ```
 
+```bash
+curl -XPOST -H 'Content-type: application/json' -d '{"name": "ecneb", "initialBalance": 15, "currentBalance": 15, "transactions": [{"transactionType": "TEST", "amount": 15}], "users": [{"personName": {"firstName": "John", "lastName": "Doe"}}]}' 'http://localhost:8080/hibernate/account-resource/api/persist'
+
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/account-resource/api/search/1'
+```
+
+> #### Compound Primary Keys
+
+```java
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@SuppressWarnings("serial")
+public class CurrencyId implements Serializable {
+
+    @Getter
+    @Setter
+    private String name;
+
+    @Getter
+    @Setter
+    private String countryName;
+}
+```
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@IdClass(CurrencyId.class)
+public class Currency {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name="NAME")
+    private String name;
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name="COUNTRY_NAME")
+    private String countryName;
+
+    @Getter
+    @Setter
+    @Column(name="SYMBOL")
+    private String symbol;
+}
+```
+
+```bash
+curl -XPOST -H 'Content-type: application/json' -d '{"name": "EUR", "countryName": "SK", "symbol": "eu"}' 'http://localhost:8080/hibernate/currency-resource/api/persist'
+
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/currency-resource/api/search/EUR/SK'
+```
+
+> #### Compound Join Columns
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "MARKET")
+public class Market {
+
+    @Getter
+    @Setter
+    @ManyToOne(cascade=CascadeType.ALL)
+    @JoinColumns({
+            @JoinColumn(name="CURRENCY_NAME", referencedColumnName="NAME"),
+            @JoinColumn(name="COUNTRY_NAME", referencedColumnName="COUNTRY_NAME")
+    })
+    //CURRENCY_NAME and COUNTRY_NAME will be places inside here (MARKET TABLE)
+    private Currency currency;
+}
+```
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@IdClass(CurrencyId.class)
+public class Currency {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name="NAME")
+    private String name;
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name="COUNTRY_NAME")
+    private String countryName;
+
+    @Getter
+    @Setter
+    @Column(name="SYMBOL")
+    private String symbol;
+}
+```
+
+```bash
+curl -XPOST -H 'Content-type: application/json' -d '{"marketName": "Github", "currency": {"name": "EUR", "countryName": "SK", "symbol": "eu"}}' 'http://localhost:8080/hibernate/market-resource/api/persist'
+
+curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/market-resource/api/search/1'
+```
+
+
+
+
+
+> #### Inheritance
+
+- There are four types of mapping strategies
+	- Mapped superclass
+	- Single table
+	- Joined table
+	- Table per class
+
+> Mapped superclass
+
+- Simplest approach
+- MappedSuperclass is not an entity
+- Tables created for each subclass, but for parent there is no table
+- Ticket shares state and behavior with its child classes but its not considered an entity and can't be managed by the EntityManager
+- Cant use polymorphic queries (that selects all ticket entities)
+
+```java
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+public class Ticket {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
+
+    @Getter
+    @Setter
+    @Column(name = "TITLE")
+    private String title;
+
+    @Getter
+    @Setter
+    @Column(name = "DESCRIPTION")
+    private String description;
+
+    @Getter
+    @Setter
+    @Column(name = "STATUS")
+    private String status;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="MAPPED_SUPER_CLASS_ENHANCEMENT")
+public class Enhancement extends Ticket {
+
+    @Getter
+    @Setter
+    @Column(name = "DUPLICATE")
+    private Boolean duplicate;
+
+    @Getter
+    @Setter
+    @Column(name = "PRIORITY")
+    private String priority;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="MAPPED_SUPER_CLASS_BUG")
+public class Bug extends Ticket {
+
+    @Getter
+    @Setter
+    @Column(name = "SEVERITY")
+    private Integer severity;
+
+    @Getter
+    @Setter
+    @Column(name = "ROOT_CAUSE")
+    private String rootCause;
+}
+```
+
+> Single Table
+
+- The single table strategy is the default strategy chosen by JPA if we dont specify one explicitly
+- We will have three classes stored in one table
+- For this reason JPA also generated a discriminator Column(DTYPE)
+- Cant use not null contrains (its the nullable = false attribute)
+- Polymorphic queries offecient
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="SINGLE_TABLE_TASK")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+public class Task {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
+
+    @Getter
+    @Setter
+    @Column(name = "TITLE")
+    private String title;
+
+    @Getter
+    @Setter
+    @Column(name = "DESCRIPTION")
+    private String description;
+
+    @Getter
+    @Setter
+    @Column(name = "STATUS")
+    private String status;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@DiscriminatorColumn(name="STORY_TYPE")
+public class Story extends Task {
+
+    @Getter
+    @Setter
+    @Column(name = "LEVEL")
+    private Integer level;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@DiscriminatorColumn(name="INCIDENT_TYPE")
+public class Incident extends Task {
+
+    @Getter
+    @Setter
+    @Column(name = "TEAM")
+    private String team;
+}
+```
+
+> Table per class
+
+- Its similar to the mapper super class strategy, but here the parent class is also a table
+- It create's three tables in DB
+- All subclass records returned via UNION state in background
+- Complexity polymorphic queries and performance issue
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="TABLE_PER_CLASS_ITEM")
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+public class Item {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
+
+    @Getter
+    @Setter
+    @Column(name = "TITLE")
+    private String title;
+
+    @Getter
+    @Setter
+    @Column(name = "DESCRIPTION")
+    private String description;
+
+    @Getter
+    @Setter
+    @Column(name = "STATUS")
+    private String status;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="TABLE_PER_CLASS_TEST")
+public class Test extends Item {
+
+    @Getter
+    @Setter
+    @Column(name = "DUPLICATE")
+    private Boolean duplicate;
+
+    @Getter
+    @Setter
+    @Column(name = "PRIORITY")
+    private String priority;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="TABLE_PER_CLASS_ACTIVITY")
+public class Activity extends Item {
+
+    @Getter
+    @Setter
+    @Column(name = "SEVERITY")
+    private Integer severity;
+
+    @Getter
+    @Setter
+    @Column(name = "ROOT_CAUSE")
+    private String rootCause;
+}
+```
+
+> Join table
+
+- It create's three tables in DB
+- But the sub tables doest hold the parent tables properties
+- The subclasses also contain a primery key field the same value as the matching record in the table of the parent class
+- Join of the tables to select the columns (between Job and Feature or Job and Defect)
+- Increases the complexity of each query
+- Use of NOT NULL contstrains are allowed
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="JOINED_JOB")
+@Inheritance(strategy = InheritanceType.JOINED)
+public class Job {
+
+    @Id
+    @Getter
+    @Setter
+    @Column(name = "ID")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
+
+    @Getter
+    @Setter
+    @Column(name = "TITLE")
+    private String title;
+
+    @Getter
+    @Setter
+    @Column(name = "DESCRIPTION")
+    private String description;
+
+    @Getter
+    @Setter
+    @Column(name = "STATUS")
+    private String status;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="JOINED_FEATURE")
+public class Feature extends Job {
+
+    @Getter
+    @Setter
+    @Column(name = "LEVEL")
+    private Integer level;
+}
+```
+
+```java
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name="JOINED_DEFECT")
+public class Defect extends Job {
+
+    @Getter
+    @Setter
+    @Column(name = "SEVERITY")
+    private Integer severity;
+
+    @Getter
+    @Setter
+    @Column(name = "ROOT_CAUSE")
+    private String rootCause;
+}
+```
+
+
+
+
+
+> #### Performance - FetchType (EAGER & LAZY)
+
+- We use the fetch attribute in the association annotations
+
+```java
+@OneToOne(fetch=FetchType.LAZY)
+@OneToMany(fetch=FetchType.LAZY)
+@ManyToOne(fetch=FetchType.LAZY)
+@ManyToMany(fetch=FetchType.LAZY)
+```
+
+```java
+public static void main(String[] args) {
+	SessionFactory factory = null;
+	Session session = null;
+	org.hibernate.Transaction tx = null;
+
+	try {
+		factory = HibernateUtil.getSessionFactory();
+		session = factory.openSession();
+		tx = session.beginTransaction();
+		
+		Query query = session.getNamedQuery("Account.largeDeposits");
+		List<Account> accounts = query.list();
+		System.out.println("Query has been executed.");
+		
+		//because we set it to lazy the bank gets selected only when we call getBank();
+		for(Account a:accounts){
+			System.out.println(a.getName());
+			System.out.println(a.getBank().getName());
+		}
+		
+		tx.commit();
+	} catch (Exception e) {
+		e.printStackTrace();
+		tx.rollback();
+	} finally {
+		session.close();
+		factory.close();
+	}
+}
+```
+
+> LazyInitializationException
+
+- Hibernate throws the LazyInitializationException when it needs to initialize a lazily fetched association to another entity without an active session context
+
+How to NOT fix the LazyInitializationException:
+- Don’t use FetchType.EAGER
+	- When you set the FetchType to EAGER, Hibernate will always fetch the association, even if you don’t use it in your use case
+- Avoid the Open Session in View anti-pattern
+	- When using the Open Session in View anti-patter, you open and close the EntityManager or Hibernate Session in your view layer. You then call the service layer, which opens and commits a database transaction. Because the Session is still open after the service layer returned the entity, the view layer can then initialize the lazily fetched association
+- Don’t use hibernate.enable_lazy_load_no_trans
+	- Another suggestion you should avoid is to set the hibernate.enable_lazy_load_no_trans configuration parameter in the persistence.xml file to true. This parameter tells Hibernate to open a temporary Session when no active Session is available
+
+How to fix the LazyInitializationException:
+- Initializing associations with a LEFT JOIN FETCH clause
+	- SELECT a FROM Author a LEFT JOIN FETCH a.books
+- Use a @NamedEntityGraph to initialize an association
+	- You can define the graph by annotating one of your entity classes with a @NamedEntityGraph annotation. Within this annotation, you can provide multiple @NamedAttributeNode annotations to specify the attributes that Hibernate shall fetch
+- Using a DTO projection
+	- SELECT new org.dto.AuthorDto(a.name,b.title) FROM Author a JOIN a.books b
+
+
+
+
+
+> #### Writing Queries
+
+- If we have a complex query then we write first the query in plain SQL and then we put it in a view
+```java
+public interface Schema {
+
+	String VIEW = "view."
+	String TABLE = "table."
+}
+```
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = Schema.VIEW + "USER_CREDENTIAL")
+public class UserCredentialView {
+
+	@Id
+	@Getter
+    @Setter
+	@Column(name="USER_ID")
+	private Long userId;
+
+    @Getter
+    @Setter
+	@Column(name="FIRST_NAME")
+	private String firstName;
+
+    @Getter
+    @Setter
+	@Column(name="LAST_NAME")
+	private String lastName;
+
+    @Getter
+    @Setter
+	@Column(name="USERNAME")
+	private String username;
+
+    @Getter
+    @Setter
+	@Column(name="PASSWORD")
+	private String password;
+}
+```
+
+> Named queries (JPA)
+> Named queries (Hibernate)
+> JPQL
+> HPQL
+> Criteria API (JPA)
+> Criteria API (Hibernate)
+> Store procedures
+> Native queries
+
+
+
+
+
+
+> #### Logging
+
+- The simplest way to dump the queries to standard out is to add the following to application.properties:
+
+```properties
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+- Via Loggers
+
+```properties
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+```
+
+- P6Spy
+
+```xml
+<dependency>
+    <groupId>com.github.gavlyukovskiy</groupId>
+    <artifactId>p6spy-spring-boot-starter</artifactId>
+    <version>1.8.0</version>
+</dependency>
+```

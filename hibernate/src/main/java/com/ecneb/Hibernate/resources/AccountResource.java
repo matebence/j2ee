@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping(value = "account-resource/api", produces = "application/json")
@@ -39,7 +40,7 @@ public class AccountResource {
         accountService.delete(id);
     }
 
-    @PostMapping("/search/{id}")
+    @GetMapping("/search/{id}")
     @ResponseStatus(HttpStatus.OK)
     public Account search(@PathVariable Long id) {
         return accountService.search(id).orElse(new Account());
