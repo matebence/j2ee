@@ -2334,7 +2334,7 @@ public class AccountBean implements AccountBeanLocal {
 @Transactional(value = Transactional.TxType.REQUIRED,
 	rollbackOn = {SQLException.class},
 	dontRollbackOn= {SQLWarning.class})
-```java
+```
 
 > @TransactionScoped annotation
 
