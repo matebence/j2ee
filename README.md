@@ -1752,27 +1752,27 @@ public class UserCredentialView {
 
 	@Id
 	@Getter
-    @Setter
+	@Setter
 	@Column(name="USER_ID")
 	private Long userId;
 
-    @Getter
-    @Setter
+	@Getter
+	@Setter
 	@Column(name="FIRST_NAME")
 	private String firstName;
 
-    @Getter
-    @Setter
+	@Getter
+	@Setter
 	@Column(name="LAST_NAME")
 	private String lastName;
 
-    @Getter
-    @Setter
+	@Getter
+	@Setter
 	@Column(name="USERNAME")
 	private String username;
 
-    @Getter
-    @Setter
+	@Getter
+	@Setter
 	@Column(name="PASSWORD")
 	private String password;
 }
@@ -1977,9 +1977,9 @@ public class EnhancementDAO implements IEnhancementDAO{
 
 > #### equals() and hashCode()
 
--You need to implement the equals() and hashCode() methods for primary key classes if you map composite primary keys.
--If you map an association to a Map, your map key needs to implement the equals() and hashCode() methods. So, if use an entity as the key, it needs to provide both methods.
--You can map one-to-many and many-to-many associations to different sub-types of Collection. If you use a Set, your entities have to have equals() and hashCode() methods.
+- You need to implement the equals() and hashCode() methods for primary key classes if you map composite primary keys.
+- If you map an association to a Map, your map key needs to implement the equals() and hashCode() methods. So, if use an entity as the key, it needs to provide both methods.
+- You can map one-to-many and many-to-many associations to different sub-types of Collection. If you use a Set, your entities have to have equals() and hashCode() methods.
 - Independent of the available keys, all equals() and hashCode() implementations need to pass the following tests:
 
 ```java
@@ -2203,37 +2203,37 @@ public class MyEntity {
 		Scenario: Invoking outside transaction. Should get an error \
 		Got TransactionRequiredException for transctionalException.getCause() as expected \
 		Scenario: Invoking within a transaction \
-		ObjectId for this beans is transactional.BeanManadtory$Proxy$_$$_WeldSublcass@278ca \
+		ObjectId for this beans is transactional.BeanManadtory$Proxy$_$$_WeldSublcass@278ca 
 
 	- NEVER
 		Scenario: Invoking outside transaction \
 		ObjectId for this beans is transactional.BeanNever$Proxy$_$$_WeldSublcass@278ca \
 		Scenario: Invoking within a transaction. Should get an error. \
-		Got InvalidTransactionException for transctionalException.getCause() as expected \
+		Got InvalidTransactionException for transctionalException.getCause() as expected 
 
 	- NOT_SUPPORTED
 		Scenario: Invoking outside transaction \
 		ObjectId for this beans is transactional.BeanNotSupported$Proxy$_$$_WeldSublcass@278ca \
 		Scenario: Invoking within a transaction. Transaction is suspedent during the method call \
-		ObjectId for this beans is transactional.BeanNotSupported$Proxy$_$$_WeldSublcass@278ca \
+		ObjectId for this beans is transactional.BeanNotSupported$Proxy$_$$_WeldSublcass@278ca 
 
 	- REQUIRED
 		Scenario: Invoking outside transaction. Transaction would be started automatcailly for the method call \
 		ObjectId for this beans is transactional.BeanRequired$Proxy$_$$_WeldSublcass@278ca \
 		Scenario: Invoking within a transaction. Should get an error. \
-		ObjectId for this beans is transactional.BeanRequired$Proxy$_$$_WeldSublcass@278ca \
+		ObjectId for this beans is transactional.BeanRequired$Proxy$_$$_WeldSublcass@278ca 
 
 	- REQUIRED_NEW
 		Scenario: Invoking outside transaction. Transaction would be started automatically for the method call \
 		ObjectId for this beans is transactional.BeanRequiredNew$Proxy$_$$_WeldSublcass@278ca \
 		Scenario: Invoking within a transaction. NEW Transaction would be started automatically for the method call \
-		ObjectId for this beans is transactional.BeanRequiredNew$Proxy$_$$_WeldSublcass@278ca \
+		ObjectId for this beans is transactional.BeanRequiredNew$Proxy$_$$_WeldSublcass@278ca 
 
 	- SUPPORTS
 		Scenario: Invoking outside transaction. Method is executed outside transaction \
 		ObjectId for this beans is transactional$Proxy$_$$_WeldSublcass@278ca \
 		Scenario: Invoking within a transaction. Method is Executed within transaction context \
-		ObjectId for this beans is transactional.Supports$Proxy$_$$_WeldSublcass@278ca \
+		ObjectId for this beans is transactional.Supports$Proxy$_$$_WeldSublcass@278ca 
 
 ```java
 import javax.ejb.*
@@ -2275,7 +2275,7 @@ public class UserSessionBean implements UserRemote {
 > Bean Managed Transactions
 
 - In Bean Managed Transactions, Transactions can be managed by handling exceptions at application level.
-- Following are the key points to be considered −
+- Following are the key points to be considered
 	- Start − When to start a transaction in a business method.
 	- Sucess − Identify success scenario when a transaction is to be committed.
 	- Failed − Identify failure scenario when a transaction is to be rollback.
@@ -2284,13 +2284,13 @@ public class UserSessionBean implements UserRemote {
 	- Scenario 1: Starting transaction and calling beans. Bean is called twice but object id should be the same
 		ObjectId for Bean1 is transactionScoped.Bean1@288ca \
 		ObjectId for Bean1 is transactionScoped.Bean1@288ca \
-		ObjectId for Bean2 is transactionScoped.Bean2@377ca \
+		ObjectId for Bean2 is transactionScoped.Bean2@377ca 
 	- Scenario 2: Repeat of scenrio 1 with new transaction. Should see different object ids
 		ObjectId for Bean1 is transactionScoped.Bean1@444ca \
 		ObjectId for Bean1 is transactionScoped.Bean1@444ca \
-		ObjectId for Bean2 is transactionScoped.Bean2@465ca \
+		ObjectId for Bean2 is transactionScoped.Bean2@465ca 
 	- Scenario 3: Calling TransactionScoped bean outside transaction
-		Got a ContextNotActiveException as expected. WELD-001303 No active context for scope type TransactionScoped \
+		Got a ContextNotActiveException as expected. WELD-001303 No active context for scope type TransactionScoped 
 
 ```java
 @Stateless
