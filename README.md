@@ -1579,9 +1579,161 @@ How to fix the LazyInitializationException:
 
 
 
-> #### Writing Queries
+> #### Queries
+
+- JPQL is a subset of HQL
+
+> Writing
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.createQuery("select t from Transaction t");
+		List<Transaction> transactions = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		TypedQuery<Transaction> query = em.createQuery("from Transaction t order by t.title", Transaction.class);
+		List<Transaction> transactions = query.getResultList();
+	}
+}
+```
+
+> Expressions And Operators
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.createQuery("select t from Transaction t "
+				+ "where t.amount > 75 and t.transactionType = 'Withdrawl'");
+		
+		List<Transaction> transactions = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		TypedQuery<Transaction> query = em.createQuery(
+				"from Transaction t"
+				+ " where (t.amount between 75 and 100) and t.title like '%s'"
+				+ " order by t.title", Transaction.class);
+		
+		List<Transaction> transactions = query.getResultList();
+	}
+}
+```
+
+> Parameters
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.createQuery("select t from Transaction t "
+				+ "where t.amount > :amount and t.transactionType = 'Withdrawl'");
+		System.out.println("Please specify an amount:");
+		
+		query.setParameter("amount", new BigDecimal(scanner.next()));
+		List<Transaction> transactions = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		TypedQuery<Transaction> query = em.createQuery(
+				"from Transaction t"
+				+ " where (t.amount between ?1 and ?2) and t.title like '%s'"
+				+ " order by t.title", Transaction.class);
+		
+		System.out.println("Please provide the first amount:");
+		query.setParameter(1, new BigDecimal(scanner.next()));
+		System.out.println("Please provide the second amount:");
+		query.setParameter(2, new BigDecimal(scanner.next()));
+	}
+}
+```
+
+> Joins
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.createQuery("select distinct t.account from Transaction t"
+				+ " where t.amount > 500 and t.transactionType = 'Deposit'");
+		
+		List<Account> accounts = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		TypedQuery<Account> query = em.createQuery("select distinct a from Transaction t"
+				+ " join t.account a "
+				+ "where t.amount > 500 and t.transactionType = 'Deposit'",Account.class);
+		
+		List<Account> accounts = query.getResultList();
+	}
+}
+```
+
+> Functions
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.createQuery("select distinct t.account from Transaction t"
+				+ " where t.amount > 500 and lower(t.transactionType) = 'deposit'");
+		
+		List<Account> accounts = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		Query query = em.createQuery("select distinct t.account.name, "
+				+ "concat(concat(t.account.bank.name, ' '),t.account.bank.address.state)"
+				+ " from Transaction t"
+				+ " where t.amount > 500 and t.transactionType = 'Deposit'");
+		
+		List<Object[]> accounts = query.getResultList();
+	}
+}
+```
+
+> Query using streams
+
+- Provide an efficient way to move through a result set
+- Scroll trought the results without fetching all the data at once
+
+```java
+public class TicketDAO implements ITicketDAO {
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Override
+    public List<Ticket> getAllTickets() {
+        String query = "select t from Ticket t order by t.title";
+        return (List<Ticket>) entityManager.createQuery(query).getResultStream().collect(Collectors.toList())
+    }
+}
+```
+
+> Views
 
 - If we have a complex query then we write first the query in plain SQL and then we put it in a view
+
 ```java
 public interface Schema {
 
@@ -1626,15 +1778,574 @@ public class UserCredentialView {
 }
 ```
 
-> Named queries (JPA)
-> Named queries (Hibernate)
-> JPQL
-> HPQL
-> Criteria API (JPA)
-> Criteria API (Hibernate)
+> Named queries
+
+```java
+@Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "ACCOUNT")
+@NamedQueries({
+	@NamedQuery(name="Account.largeDeposits", query="select distinct t.account from Transaction t"
+				+ " where t.amount > 500 and lower(t.transactionType) = 'deposit'"),
+	@NamedQuery(name="Account.byWithdrawlAmount", query="select distinct t.account.name, "
+					+ "concat(concat(t.account.bank.name, ' '),t.account.bank.address.state)"
+					+ " from Transaction t"
+					+ " where t.amount > :amount and t.transactionType = 'withdrawl'")
+})
+public class Account {
+}
+```
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Query query = session.getNamedQuery("Account.largeDeposits");
+		List<Account> accounts = query.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		Query query = em.createNamedQuery("Account.byWithdrawlAmount");
+		query.setParameter("amount", new BigDecimal("99"));
+		
+		List<Object[]> accounts = query.getResultList();
+	}
+}
+```
+
+> Criteria API (Simple selection)
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Transaction> criteriaQuery = cb.createQuery(Transaction.class);
+				
+		Root<Transaction> root = criteriaQuery.from(Transaction.class);
+		criteriaQuery.select(root);
+		
+		TypedQuery<Transaction> query = em.createQuery(criteriaQuery);
+		List<Transaction> transactions = query.getResultList();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		List<Transaction> transactions = session
+				.createCriteria(Transaction.class)
+				.addOrder(Order.desc("title")).list();
+	}
+}
+```
+
+> Criteria API (Restriction)
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Criterion criterion1 = Restrictions.le("amount", new BigDecimal(
+						"20.00"));
+		Criterion criterion2 = Restrictions.eq("transactionType",
+				"Withdrawl");
+
+		List<Transaction> transactions = session
+				.createCriteria(Transaction.class).add(Restrictions.and(criterion1, criterion2))
+				.addOrder(Order.desc("title")).list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Transaction> criteriaQuery = cb
+				.createQuery(Transaction.class);
+
+		Root<Transaction> root = criteriaQuery.from(Transaction.class);
+		Path<BigDecimal> amountPath = root.get("amount");
+		Path<String> transactionTypePath = root.get("transactionType");
+
+		criteriaQuery.select(root).where(
+				cb.and(cb.le(amountPath, new BigDecimal("20.00")),
+						cb.equal(transactionTypePath, "Withdrawl")));
+		
+		TypedQuery<Transaction> query = em.createQuery(criteriaQuery);
+		List<Transaction> transactions = query.getResultList();
+	}
+}
+```
+
+> Criteria API (Paging)
+
+```java
+public class HqlApplication {
+	public static void main(String[] args) {
+		Criteria criteria = session.createCriteria(Transaction.class)
+				.addOrder(Order.asc("title"));
+		criteria.setFirstResult((pageNumber - 1) * pageSize);
+		criteria.setMaxResults(pageSize);
+
+		List<Transaction> transactions = criteria.list();
+	}
+}
+```
+
+```java
+public class JpqlApplication {
+	public static void main(String[] args) {
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Transaction> criteriaQuery = cb
+				.createQuery(Transaction.class);
+
+		Root<Transaction> root = criteriaQuery.from(Transaction.class);
+		criteriaQuery.select(root);
+
+		TypedQuery<Transaction> query = em.createQuery(criteriaQuery);
+		query.setFirstResult((pageNumber - 1) * pageSize);
+		query.setMaxResults(pageSize);
+
+		List<Transaction> transactions = query.getResultList();
+
+	}
+}
+```
+
 > Store procedures
+
+```java
+@Entity
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@NamedStoredProcedureQuery(
+    name = "findByRelease",
+    procedureName = "FIND_TICKET<BY_RELEASE",
+    resultClasses = { Ticket.class },
+    parameters = {
+        @StoredProcedureParameter(
+            name = "p_id",
+            type = Integer.class,
+            mode = ParameterMode.IN)
+    })
+public class Ticket {
+}
+```
+
+```java
+public class TicketDAO implements ITicketDAO {
+	
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public List<Ticket> findByReleaseId(int releaseId){
+        return (List<Ticket>) entityManager.createNamedStoredProcedureQuery("findByRelease")
+    }
+}
+```
+
 > Native queries
 
+```java
+public class EnhancementDAO implements IEnhancementDAO{
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public List<Enhancement> getTicketsWithApps() {
+        String jpql = "SELECT t.id, t.description, t.status, a.app_name " +
+         "FROM APPLICATIONS a, TICKET t " +
+         "WHERE a.application_id = t.application_id";
+
+        return (List<Enhancement>) entityManager.createNativeQuery(jpql).getResultList();
+    }
+}
+```
+
+
+
+
+
+> #### equals() and hashCode()
+
+-You need to implement the equals() and hashCode() methods for primary key classes if you map composite primary keys.
+-If you map an association to a Map, your map key needs to implement the equals() and hashCode() methods. So, if use an entity as the key, it needs to provide both methods.
+-You can map one-to-many and many-to-many associations to different sub-types of Collection. If you use a Set, your entities have to have equals() and hashCode() methods.
+- Independent of the available keys, all equals() and hashCode() implementations need to pass the following tests:
+
+```java
+// 2 transient entities need to be NOT equal
+MyEntity e1 = new MyEntity("1");
+MyEntity e2 = new MyEntity("2");
+Assert.assertFalse(e1.equals(e2));
+ 
+// 2 managed entities that represent different records need to be NOT equal
+e1 = em.find(MyEntity.class, id1);
+e2 = em.find(MyEntity.class, id2);
+Assert.assertFalse(e1.equals(e2));
+ 
+// 2 managed entities that represent the same record need to be equal
+e1 = em.find(MyEntity.class, id1);
+e2 = em.find(MyEntity.class, id1);
+Assert.assertTrue(e1.equals(e2));
+ 
+// a detached and a managed entity object that represent the same record need to be equal
+em.detach(e1);
+e2 = em.find(MyEntity.class, id1);
+Assert.assertTrue(e1.equals(e2));
+ 
+// a re-attached and a managed entity object that represent the same record need to be equal
+e1 = em.merge(e1);
+Assert.assertTrue(e1.equals(e2));
+```
+
+> Using a Business Key or Natural Key
+
+```java
+@Entity
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+public class MyEntity {
+ 
+    @Id
+    @Getter
+    @Setter
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+ 
+    @Getter
+    @Setter
+    @NaturalId
+    private String businessKey;
+ 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(businessKey);
+    }
+ 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MyEntity other = (MyEntity) obj;
+        return Objects.equals(businessKey, other.getBusinessKey());
+    }
+}
+```
+
+> Using a Business Key with a Parent Reference
+
+```java
+@Entity
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+public class MyEntity {
+ 
+    @Id
+    @Getter
+    @Setter
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+ 
+    @Getter
+    @Setter
+    @NaturalId
+    private String businessKey;
+     
+    @Getter
+    @Setter
+    @ManyToOne
+    private MyParent parent;
+ 
+     
+    @Override
+    public int hashCode() {
+        return Objects.hash(parent, businessKey);
+    }
+ 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MyEntity other = (MyEntity) obj;
+        return Objects.equals(parent, other.getParent())
+                && Objects.equals(businessKey, other.getBusinessKey());
+    }
+}
+```
+
+> Using a Programmatically Managed Primary Key
+
+- If you manage your primary key values programmatically, you can implement your equals() and hashCode() methods in almost the same way as I showed you in the previous example. The only requirement here is that you set the primary key value in the constructor or immediately after you instantiated a new entity object
+
+```java
+@Entity
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+public class MyEntity {
+ 
+    @Id
+    @Getter
+    @Setter
+    private Long id;
+ 
+    public MyEntity(Long id) {
+        this.id = id;
+    }
+     
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
+ 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MyEntity other = (MyEntity) obj;
+        return Objects.equals(id, other.getId());
+    }
+}
+```
+
+> Using a Generated Primary Key
+
+- As I teased earlier, generated primary keys create a problem for the implementation of your equals() and hashCode() methods. That’s because the primary key value gets set when the entity gets persisted. So, your entity object can exist with and without a primary key value
+
+```java
+@Entity
+@Builder
+@MappedSuperclass
+@NoArgsConstructor
+@AllArgsConstructor
+public class MyEntity {
+ 
+    @Id
+    @Getter
+    @Setter
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+ 
+    @Override
+    public int hashCode() {
+        return 13;
+    }
+ 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        MyEntity other = (MyEntity) obj;
+        return id != null && id.equals(other.getId());
+    }
+}
+```
+
+
+
+
+
+> ### Java Transaction API
+
+- A transaction is a single unit of work items, which follows the ACID properties. ACID stands for Atomic, Consistent, Isolated, and Durable: 
+	- Atomic − If any of the work item fails, the whole unit will be considered failed. Success meant, all items execute successfully.
+	- Consistent − A transaction must keep the system in consistent state.
+	- Isolated − Each transaction executes independent of any other transaction.
+	- Durable − Transaction should survive system failure if it has been executed or committed.
+
+- EJB Container/Servers are transaction servers and handles transactions context propagation and distributed transactions. Transactions can be managed by the container or by custom code handling in bean's code
+	- Container Managed Transactions − In this type, the container manages the transaction states.
+	- Bean Managed Transactions − In this type, the developer manages the life cycle of transaction states.
+
+> Container Managed Transactions
+
+- EJB 3.0 has specified following attributes of transactions, which EJB containers implement:
+	- REQUIRED − Indicates that business method has to be executed within transaction, otherwise a new transaction will be started for that method.
+	- REQUIRES_NEW − Indicates that a new transaction, is to be started for the business method.
+	- SUPPORTS − Indicates that business method will execute as part of transaction.
+	- NOT_SUPPORTED − Indicates that business method should not be executed as part of transaction.
+	- MANDATORY − Indicates that business method will execute as part of transaction, otherwise exception will be thrown.
+	- NEVER − Indicates if business method executes as part of transaction, then an exception will be thrown.
+
+- Examples:
+	- MANDATORY
+		Scenario: Invoking outside transaction. Should get an error \
+		Got TransactionRequiredException for transctionalException.getCause() as expected \
+		Scenario: Invoking within a transaction \
+		ObjectId for this beans is transactional.BeanManadtory$Proxy$_$$_WeldSublcass@278ca \
+
+	- NEVER
+		Scenario: Invoking outside transaction \
+		ObjectId for this beans is transactional.BeanNever$Proxy$_$$_WeldSublcass@278ca \
+		Scenario: Invoking within a transaction. Should get an error. \
+		Got InvalidTransactionException for transctionalException.getCause() as expected \
+
+	- NOT_SUPPORTED
+		Scenario: Invoking outside transaction \
+		ObjectId for this beans is transactional.BeanNotSupported$Proxy$_$$_WeldSublcass@278ca \
+		Scenario: Invoking within a transaction. Transaction is suspedent during the method call \
+		ObjectId for this beans is transactional.BeanNotSupported$Proxy$_$$_WeldSublcass@278ca \
+
+	- REQUIRED
+		Scenario: Invoking outside transaction. Transaction would be started automatcailly for the method call \
+		ObjectId for this beans is transactional.BeanRequired$Proxy$_$$_WeldSublcass@278ca \
+		Scenario: Invoking within a transaction. Should get an error. \
+		ObjectId for this beans is transactional.BeanRequired$Proxy$_$$_WeldSublcass@278ca \
+
+	- REQUIRED_NEW
+		Scenario: Invoking outside transaction. Transaction would be started automatically for the method call \
+		ObjectId for this beans is transactional.BeanRequiredNew$Proxy$_$$_WeldSublcass@278ca \
+		Scenario: Invoking within a transaction. NEW Transaction would be started automatically for the method call \
+		ObjectId for this beans is transactional.BeanRequiredNew$Proxy$_$$_WeldSublcass@278ca \
+
+	- SUPPORTS
+		Scenario: Invoking outside transaction. Method is executed outside transaction \
+		ObjectId for this beans is transactional$Proxy$_$$_WeldSublcass@278ca \
+		Scenario: Invoking within a transaction. Method is Executed within transaction context \
+		ObjectId for this beans is transactional.Supports$Proxy$_$$_WeldSublcass@278ca \
+
+```java
+import javax.ejb.*
+ 
+@Stateless
+@TransactionManagement(TransactionManagementType.CONTAINER)
+public class UserDetailBean implements UserDetailRemote {
+	
+   private UserDetail;
+
+   @TransactionAttribute(TransactionAttributeType.REQUIRED)
+   public void createUserDetail(User user) {
+   }
+}
+```
+
+```java
+@Stateless
+public class UserSessionBean implements UserRemote {
+	
+   private User;
+
+   @EJB
+   private UserDAO userDao;
+
+
+   @EJB
+   private UserDetailRemote userDetail;
+
+   public void createUser(User user) {
+   		userDao.create(user)
+    	userDetail.createUserDetail(user);
+   }
+}
+```
+
+- createUser() business method is using createUserDetail(). If exception occurred during createUser() call and User object is not created then UserDetail object will also not be created.
+
+> Bean Managed Transactions
+
+- In Bean Managed Transactions, Transactions can be managed by handling exceptions at application level.
+- Following are the key points to be considered −
+	- Start − When to start a transaction in a business method.
+	- Sucess − Identify success scenario when a transaction is to be committed.
+	- Failed − Identify failure scenario when a transaction is to be rollback.
+
+- Examples:
+	- Scenario 1: Starting transaction and calling beans. Bean is called twice but object id should be the same
+		ObjectId for Bean1 is transactionScoped.Bean1@288ca \
+		ObjectId for Bean1 is transactionScoped.Bean1@288ca \
+		ObjectId for Bean2 is transactionScoped.Bean2@377ca \
+	- Scenario 2: Repeat of scenrio 1 with new transaction. Should see different object ids
+		ObjectId for Bean1 is transactionScoped.Bean1@444ca \
+		ObjectId for Bean1 is transactionScoped.Bean1@444ca \
+		ObjectId for Bean2 is transactionScoped.Bean2@465ca \
+	- Scenario 3: Calling TransactionScoped bean outside transaction
+		Got a ContextNotActiveException as expected. WELD-001303 No active context for scope type TransactionScoped \
+
+```java
+@Stateless
+@TransactionManagement(value=TransactionManagementType.BEAN)
+public class AccountBean implements AccountBeanLocal {
+ 
+   @Resource
+   private UserTransaction userTransaction;
+
+   public void transferFund(Account fromAccount, double fund , 
+      Account toAccount) throws Exception{
+
+      try{
+         userTransaction.begin();
+
+         confirmAccountDetail(fromAccount);
+         withdrawAmount(fromAccount,fund);
+
+         confirmAccountDetail(toAccount);
+         depositAmount(toAccount,fund);
+
+         userTransaction.commit();
+      }catch (InvalidAccountException exception) {
+         userTransaction.rollback();
+      }catch (InsufficientFundException exception) {
+         userTransaction.rollback();
+      }catch (PaymentException exception) {
+         userTransaction.rollback();
+      }
+   }
+}
+```
+
+> @Transactional annotation
+	
+- Provides declarative transaction demarcation via simple annoatation
+- Provides abilty to specify exception handling behavior for marking transaction for rollback declaratively
+- Decouples CMT from EJB with broadened support via CDI Beans, so we dont have to rely on the EJB Transaction management
+
+```java
+@Transactional(value = Transactional.TxType.REQUIRED,
+	rollbackOn = {SQLException.class},
+	dontRollbackOn= {SQLWarning.class})
+```java
+
+> @TransactionScoped annotation
+
+- Provides ability to declaratively scoped a managed bean to current transaction via simple annoatation (Bean Managed Transactions)
+- It is used with UserTransaction
+- Provides support in CDI Beans
+
+```java
+@TransactionScoped
+private void someMethodHere(String param1 String param2)
+```
 
 
 
