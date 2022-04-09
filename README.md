@@ -1286,6 +1286,28 @@ public class Bug extends Ticket {
 }
 ```
 
+```sql
+create table mapped_super_class_bug (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    root_cause varchar(255),
+    severity integer,
+    primary key (id)
+) engine=InnoDB;
+
+create table mapped_super_class_enhancement (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    duplicate bit,
+    priority varchar(255),
+    primary key (id)
+) engine=InnoDB;
+```
+
 > Single Table
 
 - The single table strategy is the default strategy chosen by JPA if we dont specify one explicitly
@@ -1353,6 +1375,19 @@ public class Incident extends Task {
     @Column(name = "TEAM")
     private String team;
 }
+```
+
+```sql
+create table single_table_task (
+   dtype varchar(31) not null,
+    id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    team varchar(255),
+    level integer,
+    primary key (id)
+) engine=InnoDB;
 ```
 
 > Table per class
@@ -1433,6 +1468,36 @@ public class Activity extends Item {
 }
 ```
 
+```sql
+create table table_per_class_activity (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    root_cause varchar(255),
+    severity integer,
+    primary key (id)
+) engine=InnoDB;
+
+create table table_per_class_item (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    primary key (id)
+) engine=InnoDB;
+
+create table table_per_class_test (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    duplicate bit,
+    priority varchar(255),
+    primary key (id)
+) engine=InnoDB;
+```
+
 > Join table
 
 - It create's three tables in DB
@@ -1506,6 +1571,29 @@ public class Defect extends Job {
     @Column(name = "ROOT_CAUSE")
     private String rootCause;
 }
+```
+
+```sql
+create table joined_defect (
+   root_cause varchar(255),
+    severity integer,
+    id integer not null,
+    primary key (id)
+) engine=InnoDB;
+
+create table joined_feature (
+   level integer,
+    id integer not null,
+    primary key (id)
+) engine=InnoDB;
+
+create table joined_job (
+   id integer not null,
+    description varchar(255),
+    status varchar(255),
+    title varchar(255),
+    primary key (id)
+) engine=InnoDB;
 ```
 
 
