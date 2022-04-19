@@ -868,6 +868,10 @@ curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/hiberna
 |SAVE_UPDATE     |Propagates the same operation to the associated child entity.     			  			          |
 |LOCK      	     |Reattaches the entity and its associated child entity with the persistent context again  			  |
 
+**Hibernate performance table**
+
+![Performance table](https://github.com/matebence/jpa/blob/master/performance.jpg)
+
 
 > #### @OneToOne Unidirectional
 
@@ -1200,6 +1204,93 @@ curl -XGET -H 'Content-type: application/json' 'http://localhost:8080/hibernate/
 
 
 
+
+> #### Caching
+
+- Caching is a mechanism to enhance the performance of a system. It is a buffer memorythat lies between the application and the database. Cache memory stores recently used data items in order to reduce the number of database hits as much as possible.
+
+> First-level Cache
+
+- If you issue multiple updates to an object, Hibernate tries to delay doing the update as long as possible to reduce the number of update SQL statements issued. If you close the session, all the objects being cached are lost and either persisted or updated in the database.
+
+> Second-level Cache
+
+- Second level cache is an optional cache and first-level cache will always be consulted before any attempt is made to locate an object in the second-level cache. The second level cache can be configured on a per-class and per-collection basis and mainly responsible for caching objects across sessions. Any third-party cache can be used with Hibernate. An org.hibernate.cache.CacheProvider interface is provided, which must be implemented to provide Hibernate with a handle to the cache implementation.
+- Not all classes benefit from caching, so it's important to be able to disable the second-level cache. The Hibernate second-level cache is set up in two steps. First, you have to decide which concurrency strategy to use. After that, you configure cache expiration and physical cache attributes using the cache provider.
+- A concurrency strategy is a mediator, which is responsible for storing items of data in the cache and retrieving them from the cache.
+
+|Strategy  					|Description 																																														|
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|Transactional      		|Use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions, in the rare case of an update. 														|
+|Read-write      			|Again use this strategy for read-mostly data where it is critical to prevent stale data in concurrent transactions, in the rare case of an update. 												|
+|Nonstrict-read-write       |This strategy makes no guarantee of consistency between the cache and the database. Use this strategy if data hardly ever changes and a small likelihood of stale data is not of critical concern. |
+|Read-only      			|A concurrency strategy suitable for data, which never changes. Use it for reference data only. 																									|
+
+- Collections are not cached by default, and we need to explicitly mark them as cacheable
+
+```java
+@Entity
+@Builder
+@Cacheable
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "ACCOUNT")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+public class Account {
+
+    @Getter
+    @Setter
+    @Cacheable
+    @ManyToMany(cascade=CascadeType.ALL)
+    @JoinTable(name="USER_ACCOUNT", joinColumns=@JoinColumn(name="ACCOUNT_ID"),
+            inverseJoinColumns=@JoinColumn(name="USER_ID"))
+    private Set<User> users = new HashSet<>();
+}
+```
+
+- Your next step after considering the concurrency strategies, you will use your cache candidate classes to pick a cache provider. Hibernate forces you to choose a single cache provider for the whole application.
+
+|Type 			|Strategy 	 																																																														|
+|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|EHCache      	|It can cache in memory or on disk and clustered caching and it supports the optional Hibernate query result cache. 																																				|
+|OSCache     	|Supports caching to memory and disk in a single JVM with a rich set of expiration policies and query cache support. 																																				|
+|warmCache     	|A cluster cache based on JGroups. It uses clustered invalidation, but doesn't support the Hibernate query cache. 																																					|
+|JBoss Cache    |A fully transactional replicated clustered cache also based on the JGroups multicast library. It supports replication or invalidation, synchronous or asynchronous communication, and optimistic and pessimistic locking. The Hibernate query cache is supported. 	|
+
+- Every cache provider is not compatible with every concurrency strategy. The following compatibility matrix will help you choose an appropriate combination.
+
+|Strategy 		|Read-only 	|Nonstrictread-write 	|Read-write 	|Transactional 	|
+|---------------|-----------|-----------------------|---------------|---------------|
+|EHCache        |🟢 			|🟢 						|🟢 				|🔴  			|
+|OSCache        |🟢 			|🟢 						|🟢				|🔴  			|
+|SwarmCache     |🟢 			|🟢 						|🔴 				|🔴 				|
+|JBoss Cache    |🟢 			|🔴 						|🔴 				|🟢 				|
+
+- Hibernate second-level caching is designed to be unaware of the actual cache provider used. Hibernate only needs to be provided with an implementation of the org.hibernate.cache.spi.RegionFactory interface which encapsulates all details specific to actual cache providers.
+
+```xml
+<dependency>
+    <groupId>org.hibernate</groupId>
+    <artifactId>hibernate-ehcache</artifactId>
+    <version>5.2.2.Final</version>
+</dependency>
+```
+
+> Query-level Cache
+
+- Hibernate also implements a cache for query resultsets that integrates closely with the second-level cache. This is an optional feature and requires two additional physical cache regions that hold the cached query results and the timestamps when a table was last updated. This is only useful for queries that are run frequently with the same parameters.
+- To use the query cache, you must first activate it using the hibernate.cache.use_query_cache="true" property in the configuration file.
+- Next, to use the query cache, you use the setCacheable(Boolean) method of the Query class.
+- Hibernate also supports very fine-grained cache support through the concept of a cache region. A cache region is part of the cache that's given a name.
+
+```java
+Session session = SessionFactory.openSession();
+Query query = session.createQuery("FROM ACCOUNT");
+query.setCacheable(true);
+query.setCacheRegion("users");
+List users = query.list();
+SessionFactory.closeSession();
+```
 
 > #### Inheritance
 
