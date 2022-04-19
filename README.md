@@ -870,7 +870,7 @@ curl -XDELETE -H 'Content-type: application/json' 'http://localhost:8080/hiberna
 
 **Hibernate performance table**
 
-![Performance table](https://github.com/matebence/jpa/blob/master/performance.jpg)
+![Performance table](https://raw.githubusercontent.com/matebence/jpa/master/performance.png)
 
 
 > #### @OneToOne Unidirectional
