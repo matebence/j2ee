@@ -2530,6 +2530,112 @@ private void someMethodHere(String param1 String param2)
 
 
 
+> #### Locking
+
+- When it comes to enterprise applications, it's crucial to manage concurrent access to a database properly. This means we should be able to handle multiple transactions in an effective and most importantly, error-proof way. What's more, we need to ensure that data stays consistent between concurrent reads and updates.
+
+- Optimistic locking is based on detecting changes on entities by checking their version attribute. If any concurrent update takes place, OptmisticLockException occurs. After that, we can retry updating the data.
+
+- We can imagine that this mechanism is suitable for applications which do much more reads than updates or deletes. What is more, it's useful in situations where entities must be detached for some time and locks cannot be held.
+
+- On the contrary, pessimistic locking mechanism involves locking entities on the database level.
+
+- Each transaction can acquire a lock on data. As long as it holds the lock, no transaction can read, delete or make any updates on the locked data. We can presume that using pessimistic locking may result in deadlocks. However, it ensures greater integrity of data than optimistic locking.
+
+> Optimistic Locking
+
+- In order to use optimistic locking, we need to have an entity including a property with @Version annotation. While using it, each transaction that reads data holds the value of the version property.
+
+- Before the transaction wants to make an update, it checks the version property again.
+
+- If the value has changed in the meantime an OptimisticLockException is thrown. Otherwise, the transaction commits the update and increments a value version property.
+
+
+```java
+public class Car {
+
+    @Id
+    private Long id;
+
+    @Version
+    private Integer version;
+```
+
+- JPA provides us with two different optimistic lock modes (and two aliases):
+	- OPTIMISTIC – it obtains an optimistic read lock for all entities containing a version attribute
+	- OPTIMISTIC_FORCE_INCREMENT – it obtains an optimistic lock the same as OPTIMISTIC and additionally increments the version attribute value
+	- READ – it's a synonym for OPTIMISTIC
+	- WRITE – it's a synonym for OPTIMISTIC_FORCE_INCREMENT
+
+- As we already know, OPTIMISTIC and READ lock modes are synonyms as well as OPTIMISTIC_FORCE_INCREMENT and WRITE. However, JPA specification recommends us to use OPTIMISTIC in new applications.
+
+```java
+Query query = entityManager.createQuery("from Car where id = :id");
+query.setParameter("id", carId);
+query.setLockMode(LockModeType.OPTIMISTIC_INCREMENT);
+query.getResultList()
+
+
+Car car = entityManager.find(Car.class, id);
+entityManager.lock(car, LockModeType.OPTIMISTIC);
+
+@NamedQuery(name="optimisticLock",
+  query="SELECT s FROM Car s WHERE s.id LIKE :id",
+  lockMode = WRITE)
+```
+
+> Pessimistic Locking
+
+- There are plenty of situations when we want to retrieve data from a database. Sometimes we want to lock it for ourselves for further processing so nobody else can interrupt our actions.
+
+- We can think of two concurrency control mechanisms which allow us to do that: setting the proper transaction isolation level or setting a lock on data that we need at the moment.
+
+- JPA specification defines three pessimistic lock modes which we're going to discuss:
+	- PESSIMISTIC_READ – allows us to obtain a shared lock and prevent the data from being updated or deleted
+	- PESSIMISTIC_WRITE – allows us to obtain an exclusive lock and prevent the data from being read, updated or deleted
+	- PESSIMISTIC_FORCE_INCREMENT – works like PESSIMISTIC_WRITE and it additionally increments a version attribute of a versioned entity
+
+- It's good to know which exception may occur while working with pessimistic locking. JPA specification provides different types of exceptions:
+    -PessimisticLockException – indicates that obtaining a lock or converting a shared to exclusive lock fails and results in a transaction-level rollback
+    - LockTimeoutException –  indicates that obtaining a lock or converting a shared lock to exclusive times out and results in a statement-level rollback
+    - PersistanceException – indicates that a persistence problem occurred. PersistanceException and its subtypes, except NoResultException, NonUniqueResultException, LockTimeoutException, and QueryTimeoutException, marks the active transaction to be rolled back.
+
+```java
+Query query = entityManager.createQuery("from Car where id = :id");
+query.setParameter("carId", carId);
+query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+query.getResultList()
+
+
+Car result = entityManager.find(car.class, id);
+entityManager.lock(result, LockModeType.PESSIMISTIC_WRITE);
+
+@NamedQuery(name="pessimisticLock",
+  query="SELECT s FROM Car s WHERE s.id LIKE :id",
+  lockMode = PESSIMISTIC_READ)
+```
+
+- Lock scope parameter defines how to deal with locking relationships of the locked entity. It's possible to obtain a lock just on a single entity defined in a query or additionally block its relationships.
+	- PessimisticLockScope.NORMAL - We should know that the PessimisticLockScope.NORMAL is the default scope. With this locking scope, we lock the entity itself. When used with joined inheritance it also locks the ancestors.
+	- PessimisticLockScope.EXTENDED - The EXTENDED scope covers the same functionality as NORMAL. In addition, it's able to block related entities in a join table.
+
+- Besides setting lock scopes, we can adjust another lock parameter – timeout. The timeout value is the number of milliseconds that we want to wait for obtaining a lock until the LockTimeoutException occurs.
+
+
+```java
+Map<String, Object> properties = new HashMap<>(); 
+map.put("javax.persistence.lock.timeout", 1000L); 
+map.put("javax.persistence.lock.scope", PessimisticLockScope.EXTENDED);
+
+entityManager.find(
+  Student.class, 1L, LockModeType.PESSIMISTIC_READ, properties);
+```
+
+
+
+
+
+
 > #### Logging
 
 - The simplest way to dump the queries to standard out is to add the following to application.properties:
